@@ -1,0 +1,1 @@
+<script src="<?= BASE_PATH ?>/assets/js/pwa.js" defer data-base="<?= BASE_PATH ?>/"></script>
