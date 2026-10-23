@@ -33,9 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($erros)) {
-            conectar()->prepare(
-                'UPDATE utilizadores SET password_hash = :h, deve_mudar_password = 0 WHERE id = :id'
+            $pdo = conectar();
+            $pdo->prepare(
+                'UPDATE utilizadores
+                SET password_hash = :h, deve_mudar_password = 0, versao_sessao = versao_sessao + 1
+                WHERE id = :id'
             )->execute([':h' => password_hash($nova, algoritmo_password()), ':id' => $u['id']]);
+
+            $st = $pdo->prepare('SELECT versao_sessao FROM utilizadores WHERE id = :id');
+            $st->execute([':id' => $u['id']]);
+            $_SESSION['sv'] = (int)$st->fetchColumn();     // esta sessão continua; as outras caem
 
             session_regenerate_id(true);
             registar_auditoria('password_alterada');

@@ -1,5 +1,5 @@
 // ===== 1. Configuração =====
-const VERSAO = 'hue-v3';
+const VERSAO = 'hue-v6';
 const CACHE_ESTATICO = `estatico-${VERSAO}`;
 const CACHE_PAGINAS  = `paginas-${VERSAO}`;
 

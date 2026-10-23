@@ -1,5 +1,6 @@
 <?php
 // ===== Ícones (SVG simples, sem bibliotecas externas) =====
+const CLASSE_INPUT = 'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/30';
 function icone(string $nome, string $classe = 'h-5 w-5'): string
 {
     static $paths = [
@@ -11,6 +12,10 @@ function icone(string $nome, string $classe = 'h-5 w-5'): string
         'dinheiro' => '<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/>',
         'relogio'  => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
         'check'    => '<path d="M5 13l4 4L19 7"/>',
+        'servicos'    => '<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+        'comodidades' => '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
+        'utilizadores' => '<circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0112 0v1"/><path d="M17 11a3 3 0 100-6M22 21v-1a5 5 0 00-4-4.9"/>',
+        'auditoria'    => '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>',
     ];
     return '<svg class="' . e($classe) . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
          . 'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
@@ -21,6 +26,11 @@ function icone(string $nome, string $classe = 'h-5 w-5'): string
 function fmt_data(string $data): string
 {
     return (new DateTimeImmutable($data))->format('d/m/Y');
+}
+
+function fmt_data_hora(string $data): string
+{
+    return (new DateTimeImmutable($data))->format('d/m/Y H:i');
 }
 
 function badge_estado(string $estado): string
@@ -56,9 +66,13 @@ function admin_topo(string $titulo, string $ativo): void
     $inicial = mb_strtoupper(mb_substr($u['nome'], 0, 1));
 
     $menu = [
-        'painel'        => ['Painel',        '/admin/index.php',         'painel',   'painel.ver'],
-        'reservas'      => ['Reservas',      '/admin/reservas.php',      'reservas', 'reservas.ver'],
-        'configuracoes' => ['Configurações', '/admin/configuracoes.php', 'config',   'configuracoes.editar'],
+        'painel'        => ['Painel',        '/admin/index.php',         'painel',       'painel.ver'],
+        'reservas'      => ['Reservas',      '/admin/reservas.php',      'reservas',     'reservas.ver'],
+        'servicos'      => ['Serviços',      '/admin/servicos.php',      'servicos',     'servicos.gerir'],
+        'comodidades'   => ['Comodidades',   '/admin/comodidades.php',   'comodidades',  'servicos.gerir'],
+        'configuracoes' => ['Configurações', '/admin/configuracoes.php', 'config',       'configuracoes.editar'],
+        'utilizadores'  => ['Utilizadores',  '/admin/utilizadores.php',  'utilizadores', 'utilizadores.gerir'],
+        'auditoria'     => ['Auditoria',     '/admin/auditoria.php',     'auditoria',    'auditoria.ver'],
     ];
     ?>
 <!DOCTYPE html>
@@ -67,7 +81,7 @@ function admin_topo(string $titulo, string $ativo): void
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title><?= e($titulo) ?> | Painel</title>
+    <title><?= e($titulo) ?> | <?= e($config['nome_estabelecimento'] ?? 'Painel') ?></title>
     <?php require __DIR__ . '/pwa_head.php'; ?>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased">
@@ -75,8 +89,8 @@ function admin_topo(string $titulo, string $ativo): void
 
 <aside class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col bg-slate-900 transition-transform duration-200 peer-checked:translate-x-0 lg:translate-x-0">
     <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-        <img src="<?= e(BASE_PATH) ?>/assets/img/icons/icon-192.png" alt="" class="h-8 w-8 rounded-lg">
-        <div class="leading-tight">
+        <img src="<?= e(BASE_PATH) ?>/assets/img/icons/icon-192.png" alt="" class="h-8 w-8 shrink-0 rounded-lg">
+        <div class="min-w-0 leading-tight">
             <p class="truncate text-sm font-semibold text-white"><?= e($config['nome_estabelecimento'] ?? 'Hotel') ?></p>
             <p class="text-xs text-slate-400">Painel de gestão</p>
         </div>
@@ -100,6 +114,10 @@ function admin_topo(string $titulo, string $ativo): void
                 <p class="text-xs text-slate-400"><?= e(NOMES_PAPEIS[$u['papel']] ?? $u['papel']) ?></p>
             </div>
         </div>
+        <a href="<?= e(BASE_PATH) ?>/mudar_password.php"
+        class="mt-3 flex items-center rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
+            Alterar palavra-passe
+        </a>
         <form method="post" action="<?= e(BASE_PATH) ?>/logout.php" class="mt-3">
             <input type="hidden" name="csrf" value="<?= e(token_csrf()) ?>">
             <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">

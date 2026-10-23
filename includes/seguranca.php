@@ -168,14 +168,17 @@ function utilizador_atual(): ?array
         $carregado = true;
         if (!empty($_SESSION['uid'])) {
             $st = conectar()->prepare(
-                'SELECT id, nome, email, papel, deve_mudar_password
+                'SELECT id, nome, email, papel, deve_mudar_password, versao_sessao
                  FROM utilizadores WHERE id = :id AND ativo = 1'
             );
             $st->execute([':id' => (int)$_SESSION['uid']]);
             $utilizador = $st->fetch() ?: null;
 
-            if (!$utilizador) {          // conta apagada ou desativada: sessão inválida
+            // conta apagada ou desativada, ou palavra-passe reposta: esta sessão deixa de valer
+            if (!$utilizador || (int)$utilizador['versao_sessao'] !== (int)($_SESSION['sv'] ?? 0)) {
+                $utilizador = null;
                 terminar_sessao();
+                $_SESSION['aviso_login'] = 'A sua sessão já não é válida. Entre novamente.';
             }
         }
     }
@@ -276,9 +279,9 @@ function tentar_login(string $email, string $password): array
     }
 
     $st = conectar()->prepare(
-        'SELECT id, password_hash, papel FROM utilizadores WHERE email = :e AND ativo = 1'
+        'SELECT id, password_hash, papel, versao_sessao FROM utilizadores WHERE email = :e AND ativo = 1'
     );
-    $st->execute([':e' => $email]);
+        $st->execute([':e' => $email]);
     $u = $st->fetch();
 
     if ($u) {
@@ -306,6 +309,7 @@ function tentar_login(string $email, string $password): array
     session_regenerate_id(true);            // novo ID: impede "fixação de sessão"
     unset($_SESSION['csrf']);               // novo token CSRF
     $_SESSION['uid']              = (int)$u['id'];
+    $_SESSION['sv'] = (int)$u['versao_sessao'];
     $_SESSION['inicio']           = time();
     $_SESSION['ultima_atividade'] = time();
 
@@ -314,4 +318,14 @@ function tentar_login(string $email, string $password): array
     registar_auditoria('login_ok', $email, (int)$u['id']);
 
     return ['ok' => true, 'papel' => $u['papel']];
+}
+
+function nova_password_temporaria(int $n = 16): string
+{
+    $alfabeto = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $senha = '';
+    for ($i = 0; $i < $n; $i++) {
+        $senha .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+    }
+    return $senha;
 }

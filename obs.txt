@@ -1,0 +1,1 @@
+a pagina novo utilizador apos a criacao do utilizador e exibicao da password deve aparecer a opcao de imprimir e guardar como pdf para imprimir a senha com instrucoes ao utilizador de modo com que ele consiga fazer o seu login e evitar cyber ataque

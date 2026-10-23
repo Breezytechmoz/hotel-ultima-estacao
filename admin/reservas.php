@@ -16,7 +16,7 @@ $estado = in_array($_GET['estado'] ?? '', $estados_validos, true) ? $_GET['estad
 $q      = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 50);
 $pagina = max(1, (int)($_GET['pagina'] ?? 1));
 
-// ===== 2. Ações (confirmar / cancelar) =====
+// ===== 2. Ações (confirmar / cancelar / concluir) =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exigir_permissao('reservas.gerir');            // "ver" não chega para "alterar"
 
@@ -29,12 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $codigo = match ($acao) {
                 'confirmar' => confirmar_reserva($id),
                 'cancelar'  => cancelar_reserva_pelo_hotel($id),
+                'concluir'  => concluir_reserva($id),
                 default     => throw new RuntimeException('Ação desconhecida.'),
             };
             registar_auditoria('reserva_' . $acao, $codigo);
-            flash('ok', $acao === 'confirmar'
-                ? "Reserva $codigo confirmada."
-                : "Reserva $codigo cancelada. Reembolso de 100% a processar.");
+
+            $mensagens = [
+                'confirmar' => "Reserva $codigo confirmada.",
+                'cancelar'  => "Reserva $codigo cancelada. Reembolso de 100% a processar.",
+                'concluir'  => "Reserva $codigo marcada como concluída.",
+            ];
+            flash('ok', $mensagens[$acao]);
         } catch (RuntimeException $ex) {
             flash('erro', $ex->getMessage());
         }
@@ -84,6 +89,14 @@ $reservas = $st->fetchAll();
 $tabs = ['' => 'Todas', 'pendente' => 'Pendentes', 'confirmada' => 'Confirmadas',
          'cancelada' => 'Canceladas', 'concluida' => 'Concluídas'];
 $base = array_filter(['estado' => $estado, 'q' => $q]);
+
+$botao_acao = function (array $r, string $acao, string $rotulo, string $classes, ?string $confirmar = null): string {
+    return '<form method="post" class="ml-1 inline"' . ($confirmar ? ' data-confirmar="' . e($confirmar) . '"' : '') . '>'
+         . '<input type="hidden" name="csrf" value="' . e(token_csrf()) . '">'
+         . '<input type="hidden" name="id" value="' . (int)$r['id'] . '">'
+         . '<input type="hidden" name="acao" value="' . e($acao) . '">'
+         . '<button class="rounded-md px-3 py-1.5 text-xs font-semibold ' . $classes . '">' . e($rotulo) . '</button></form>';
+};
 
 admin_topo('Reservas', 'reservas');
 ?>
@@ -162,23 +175,20 @@ admin_topo('Reservas', 'reservas');
                     </td>
                     <?php if ($gerir): ?>
                         <td class="whitespace-nowrap px-4 py-3 text-right">
-                            <?php if ($r['estado'] === 'pendente'): ?>
-                                <form method="post" class="inline">
-                                    <input type="hidden" name="csrf" value="<?= e(token_csrf()) ?>">
-                                    <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                                    <input type="hidden" name="acao" value="confirmar">
-                                    <button class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Confirmar</button>
-                                </form>
-                            <?php endif; ?>
-                            <?php if (in_array($r['estado'], ['pendente', 'confirmada'], true)): ?>
-                                <form method="post" class="ml-1 inline"
-                                      data-confirmar="<?= e('Cancelar a reserva ' . $r['codigo'] . '? O cliente receberá reembolso de 100%.') ?>">
-                                    <input type="hidden" name="csrf" value="<?= e(token_csrf()) ?>">
-                                    <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                                    <input type="hidden" name="acao" value="cancelar">
-                                    <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50">Cancelar</button>
-                                </form>
-                            <?php endif; ?>
+                            <?php
+                            $terminou = $r['data_fim'] < date('Y-m-d');
+
+                            if ($r['estado'] === 'pendente' && !$terminou) {
+                                echo $botao_acao($r, 'confirmar', 'Confirmar', 'bg-emerald-600 text-white hover:bg-emerald-700');
+                            }
+                            if ($r['estado'] === 'pendente' || ($r['estado'] === 'confirmada' && !$terminou)) {
+                                echo $botao_acao($r, 'cancelar', 'Cancelar', 'border border-rose-200 bg-white text-rose-700 hover:bg-rose-50',
+                                    'Cancelar a reserva ' . $r['codigo'] . '? O cliente receberá reembolso de 100%.');
+                            }
+                            if ($r['estado'] === 'confirmada' && $terminou) {
+                                echo $botao_acao($r, 'concluir', 'Concluir', 'bg-sky-600 text-white hover:bg-sky-700');
+                            }
+                            ?>
                         </td>
                     <?php endif; ?>
                 </tr>
