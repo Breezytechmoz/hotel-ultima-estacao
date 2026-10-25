@@ -166,7 +166,11 @@ admin_topo('Reservas', 'reservas');
                         <?= badge_estado($r['estado']) ?>
                         <?php if ($r['estado'] === 'cancelada'): ?>
                             <p class="mt-1 text-xs text-slate-500">
-                                por <?= $r['cancelado_por'] === 'hotel' ? 'o hotel' : 'o cliente' ?>
+                                <?= match ($r['cancelado_por']) {
+                                    'hotel'   => 'Cancelada pelo hotel',
+                                    'cliente' => 'Cancelada pelo cliente',
+                                    default   => 'Origem não registada',
+                                } ?>
                                 <?= $ver_valores && $r['valor_reembolso'] !== null
                                     ? '· reembolso ' . (int)$r['reembolso_percentagem'] . '% (' . e(formatar_mt($r['valor_reembolso'])) . ')'
                                     : '' ?>

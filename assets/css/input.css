@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: Georgia, Cambria, "Times New Roman", serif;
+
+  /* Índigo da faixa da placa (estimado a partir de uma fotografia) */
+  --color-marca-50:  #EEF1FB;
+  --color-marca-100: #DCE2F6;
+  --color-marca-200: #BAC5ED;
+  --color-marca-300: #8F9FE0;
+  --color-marca-400: #6677CF;
+  --color-marca-500: #4656B8;
+  --color-marca-600: #36449C;
+  --color-marca-700: #2C377F;
+  --color-marca-800: #232C66;
+  --color-marca-900: #1A214D;
+  --color-marca-950: #11163A;
+
+  /* Amarelo da palavra HOTEL */
+  --color-ouro-300: #F7D667;
+  --color-ouro-400: #F2C230;
+  --color-ouro-500: #E0A800;
+  --color-ouro-600: #B98700;
+
+  /* Verde do emblema */
+  --color-folha-50:  #F1F7E8;
+  --color-folha-500: #6BA32E;
+  --color-folha-600: #558622;
+}

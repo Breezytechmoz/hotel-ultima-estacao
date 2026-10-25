@@ -34,8 +34,7 @@ function gerar_codigo_reserva(): string
 function listar_servicos(): array
 {
     $sql = "SELECT s.*,
-                   GROUP_CONCAT(CONCAT(c.icone, ' ', c.nome)
-                                ORDER BY c.nome SEPARATOR '|') AS comodidades
+                   GROUP_CONCAT(c.nome ORDER BY c.nome SEPARATOR '|') AS comodidades
             FROM servicos s
             LEFT JOIN servico_comodidade sc ON sc.servico_id = s.id
             LEFT JOIN comodidades c         ON c.id = sc.comodidade_id

@@ -68,6 +68,7 @@ function admin_topo(string $titulo, string $ativo): void
     $menu = [
         'painel'        => ['Painel',        '/admin/index.php',         'painel',       'painel.ver'],
         'reservas'      => ['Reservas',      '/admin/reservas.php',      'reservas',     'reservas.ver'],
+        'financeiro'    => ['Financeiro',    '/admin/financeiro.php',    'dinheiro',     'financeiro.ver'],
         'servicos'      => ['Serviços',      '/admin/servicos.php',      'servicos',     'servicos.gerir'],
         'comodidades'   => ['Comodidades',   '/admin/comodidades.php',   'comodidades',  'servicos.gerir'],
         'configuracoes' => ['Configurações', '/admin/configuracoes.php', 'config',       'configuracoes.editar'],

@@ -1,69 +1,89 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/funcoes.php';
+require_once __DIR__ . '/includes/servicos_admin_funcoes.php';
 require_once __DIR__ . '/includes/cancelamento_funcoes.php';
+require_once __DIR__ . '/includes/publico_layout.php';
 
-$config = obter_configuracoes();
+$c      = config_site();
 $regras = listar_regras_cancelamento();
 
-$nomes_tipo = [
-    'quarto'     => 'Alojamento (quartos)',
-    'rent_a_car' => 'Rent-a-car',
-    'evento'     => 'Sala de eventos',
-    'catering'   => 'Catering e ornamentação',
-];
+function classe_pct(int $p): string
+{
+    return $p >= 100 ? 'bg-folha-50 text-folha-600'
+         : ($p > 0   ? 'bg-amber-50 text-amber-800' : 'bg-rose-50 text-rose-700');
+}
+
+publico_topo('Termos e condições | ' . ($c['nome_estabelecimento'] ?? 'Hotel'));
 ?>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Termos e Condições | <?= e($config['nome_estabelecimento'] ?? 'Hotel') ?></title>
-    <?php require __DIR__ . '/includes/pwa_scripts.php'; ?>
-    <?php require __DIR__ . '/includes/pwa_head.php'; ?>
-</head>
-<body class="bg-gray-100 min-h-screen">
-<header class="bg-blue-700 text-white py-6 text-center">
-    <h1 class="text-2xl font-bold"><?= e($config['nome_estabelecimento'] ?? '') ?></h1>
-    <p class="text-blue-100 text-sm mt-1">Termos, Condições e Política de Cancelamento</p>
-</header>
+<section class="bg-marca-900 text-white">
+    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-ouro-400">Informação</p>
+        <h1 class="mt-2 font-display text-3xl sm:text-4xl">Termos, condições e cancelamento</h1>
+        <p class="mt-2 max-w-xl text-sm text-marca-200">Leia com atenção antes de reservar. É o que aceita ao fazer a sua reserva.</p>
+    </div>
+</section>
 
-<main class="max-w-3xl mx-auto p-4 sm:p-8 space-y-6">
+<main class="mx-auto max-w-4xl space-y-14 px-4 py-12 sm:px-6">
 
-    <section class="bg-white p-5 rounded-lg shadow">
-        <h2 class="text-lg font-semibold text-gray-800 mb-3">Regras da casa</h2>
-        <p class="text-gray-700"><?= nl2br(e($config['regras_gerais'] ?? '')) ?></p>
+    <section>
+        <h2 class="font-display text-2xl text-marca-900">Regras da casa</h2>
+        <div class="mt-4 rounded-2xl border border-marca-100 bg-marca-50/50 p-6 leading-relaxed text-slate-700">
+            <?= nl2br(e($c['regras_gerais'] ?? '')) ?>
+        </div>
     </section>
 
-    <section class="bg-white p-5 rounded-lg shadow">
-        <h2 class="text-lg font-semibold text-gray-800 mb-3">Termos e condições</h2>
-        <p class="text-gray-700"><?= nl2br(e($config['termos_condicoes'] ?? '')) ?></p>
+    <section>
+        <h2 class="font-display text-2xl text-marca-900">Política de cancelamento</h2>
+        <p class="mt-2 text-sm text-slate-600">
+            O reembolso depende da antecedência com que cancela, contada até às 00:00 do dia de início da reserva.
+            Se for o hotel a cancelar, reembolsamos sempre 100% do valor.
+        </p>
+
+        <div class="mt-6 grid gap-5 md:grid-cols-2">
+            <?php foreach (TIPOS_SERVICO as $tipo => $rotulo): ?>
+                <?php if (empty($regras[$tipo])) continue; ?>
+                <article class="rounded-2xl border border-marca-100 bg-white p-6 shadow-sm">
+                    <h3 class="flex items-center gap-3 font-display text-lg text-marca-900">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-marca-50 text-marca-700"><?= icone_pub($tipo, 'h-5 w-5') ?></span>
+                        <?= e($rotulo) ?>
+                    </h3>
+                    <ul class="mt-4 divide-y divide-slate-100 text-sm">
+                        <?php $anterior = null; ?>
+                        <?php foreach ($regras[$tipo] as $r): ?>
+                            <?php
+                            $h = (int)$r['horas_antecedencia_min'];
+                            $p = (int)$r['percentagem_reembolso'];
+                            $texto = $anterior === null
+                                ? 'Com ' . formatar_antecedencia($h) . ' ou mais'
+                                : 'De ' . formatar_antecedencia($h) . ' até menos de ' . formatar_antecedencia($anterior);
+                            $anterior = $h;
+                            ?>
+                            <li class="flex items-center justify-between gap-3 py-3">
+                                <span class="text-slate-700"><?= e($texto) ?></span>
+                                <span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold <?= classe_pct($p) ?>"><?= $p ?>% de reembolso</span>
+                            </li>
+                        <?php endforeach; ?>
+                        <li class="flex items-center justify-between gap-3 py-3">
+                            <span class="text-slate-700">Com menos de <?= e(formatar_antecedencia((int)$anterior)) ?> ou sem comparência</span>
+                            <span class="shrink-0 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">Sem reembolso</span>
+                        </li>
+                    </ul>
+                </article>
+            <?php endforeach; ?>
+        </div>
+
+        <p class="mt-6 text-sm">
+            Precisa de cancelar?
+            <a href="<?= e(BASE_PATH) ?>/cancelar.php" class="font-semibold text-marca-700 underline">Cancele a sua reserva aqui</a>.
+        </p>
     </section>
 
-    <section class="bg-white p-5 rounded-lg shadow">
-        <h2 class="text-lg font-semibold text-gray-800 mb-1">Política de cancelamento e reembolso</h2>
-        <p class="text-sm text-gray-500 mb-4">
-            A percentagem depende da antecedência com que cancela, contada até ao dia de início da reserva.
-        </p>
-
-        <?php foreach ($nomes_tipo as $tipo => $nome): ?>
-            <?php if (empty($regras[$tipo])) continue; ?>
-            <h3 class="font-semibold text-gray-900 mt-4"><?= e($nome) ?></h3>
-            <ul class="list-disc ml-5 text-gray-700 text-sm space-y-1 mt-1">
-                <?php foreach ($regras[$tipo] as $r): ?>
-                    <li>
-                        Cancelamento com <strong><?= e(formatar_antecedencia((int)$r['horas_antecedencia_min'])) ?></strong>
-                        ou mais de antecedência: reembolso de <strong><?= (int)$r['percentagem_reembolso'] ?>%</strong>.
-                    </li>
-                <?php endforeach; ?>
-                <li>Com menos antecedência, ou em caso de não comparência: sem reembolso.</li>
-            </ul>
-        <?php endforeach; ?>
-
-        <p class="text-sm mt-5">
-            Precisa de cancelar? <a href="cancelar.php" class="text-blue-700 underline">Cancele a sua reserva aqui</a>.
-        </p>
+    <section>
+        <h2 class="font-display text-2xl text-marca-900">Termos e condições</h2>
+        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-6 leading-relaxed text-slate-700">
+            <?= nl2br(e($c['termos_condicoes'] ?? '')) ?>
+        </div>
     </section>
 </main>
-</body>
-</html>
+<?php publico_fundo(); ?>

@@ -1,5 +1,5 @@
 {
-  "name": "Hotel Última Estação",
+  "name": "Hotel & Restaurante Última Estação",
   "short_name": "Última Estação",
   "description": "Reservas de quartos, rent-a-car e eventos em Tete.",
   "id": "./",
@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "lang": "pt",
   "background_color": "#ffffff",
-  "theme_color": "#1d4ed8",
+  "theme_color": "#2C377F",
   "icons": [
     { "src": "assets/img/icons/icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "assets/img/icons/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },

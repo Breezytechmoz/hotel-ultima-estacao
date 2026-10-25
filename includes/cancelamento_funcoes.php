@@ -114,3 +114,24 @@ function cancelar_reserva(string $codigo, string $email): array
         throw $ex;
     }
 }
+
+    // ===== Limite de tentativas falhadas ao consultar uma reserva =====
+const CONSULTA_MAX_FALHAS = 8;
+
+function consulta_bloqueada(string $ip): bool
+{
+    $j  = (int)LOGIN_JANELA_MIN;
+    $st = conectar()->prepare(
+        "SELECT COUNT(*) FROM tentativas_consulta
+         WHERE ip = :ip AND criado_em > NOW() - INTERVAL $j MINUTE"
+    );
+    $st->execute([':ip' => $ip]);
+    return (int)$st->fetchColumn() >= CONSULTA_MAX_FALHAS;
+}
+
+function registar_falha_consulta(string $ip): void
+{
+    $pdo = conectar();
+    $pdo->prepare('INSERT INTO tentativas_consulta (ip) VALUES (:ip)')->execute([':ip' => $ip]);
+    $pdo->exec('DELETE FROM tentativas_consulta WHERE criado_em < NOW() - INTERVAL 1 DAY');
+}
